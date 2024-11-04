@@ -89,6 +89,10 @@ def create_wallet_random():
         else:
             print("Your wallet will not be password protected")
             password_match=1
+    if len(userpass0) > 0:
+        hashed_password = hashlib.sha256(str(userpass0).encode("utf-8")).digest()
+    else:
+        hashed_password = [0]*32
     file_name = input("Give your wallet file a name? (optional - default: CaptchaCoin Wallet)\n")
     file_name = file_name.strip()
     if len(file_name) == 0:
@@ -104,11 +108,17 @@ def create_wallet_random():
             valid_key_found=1
         except:
             private_key_input = hashlib.sha256(private_key_input.digest())
-    if len(userpass0) > 0:
-        hashed_password = hashlib.sha256(str(userpass0).encode("utf-8")).digest()
-    else:
-        hashed_password = [0]*32
+    address=(b"\x00\x00"+hashlib.sha256(private_key.verifying_key.to_string('compressed')).digest()).hex()
     save_wallet(private_key, file_name, hashed_password)
+    user_input = input("\nWhat you like to do next?\n[1] Mine Caps to this address\n[2] Back to the main menu\n[Any other key] Quit\n")
+    print("\n\n")
+    if user_input=="1":
+        webbrowser.open('https://www.captchacoin.net/earn/login-user.php?' + address)
+    elif user_input=="2":
+        main()
+    else:
+        exit()
+    main()
 
 def create_wallet_seed():
     print("\n\nGenerate a wallet from a seed phrase. Only choose this option if you are confident you understand the requirements of doing so.\n")
@@ -210,8 +220,6 @@ def save_wallet(private_key, file_name, hashed_password):
     print("Your wallet has been saved to:\n" + os.getcwd() + "\n\n\n")
     print("The address for receiving Caps is:\n")
     print(address.hex() + "\n")
-    time.sleep(5)
-    main()
 
 def access_wallet():
     print("\n\nWhat sort of wallet would you like to access?\n")
