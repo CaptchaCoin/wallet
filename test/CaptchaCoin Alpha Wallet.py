@@ -16,88 +16,61 @@ except:
     exit()
 
 def main():
-    # Record the time whenever the user makes an action as a source of randomness for wallet generation
     global random_time
-    try:
-        random_time += str(time.time()).encode("utf-8")
-    except:
-        random_time = str(time.time()).encode("utf-8")
+    random_time = hashlib.sha256(str(time.time()).encode("utf-8")).digest()
     print("CaptchaCoin Wallet Software - Alpha release")
     print("This version of the CaptchaCoin wallet software is for testing only.\nPlease only use it with very small quantities of Caps.\n")
     print("Wallets created using test software may not be supported in the future.")
-    print("Select one of the following options:\n[1] Create a wallet\n[2] Access a wallet and create a transaction\n[3] Verify a transaction\n")
+    initial_prompt()
+
+def time_randomness():
+    global random_time
+    time_now = hashlib.sha256(str(time.time()).encode("utf-8")).digest()
+    random_time=[(time_now + random_time) % 256 for time_now, random_time in zip(time_now, random_time)]
+    return random_time
+
+def initial_prompt():
+    time_randomness()
+    print("Enter a command, or select one of the following options:\n[1] Create a wallet\n[2] Access a wallet and create a transaction\n[3] Verify a transaction\n")
     user_input = input("Please enter an option (1, 2 or 3): ")
-    random_time += str(time.time()).encode("utf-8")
+    time_randomness()
     if user_input == "1":
-        create_wallet()
+        create_wallet_input()
     elif user_input == "2":
         access_wallet()
     elif user_input == "3":
         verify_transaction()
     else:
-        print("Input not recognised. Please try again.")
-        main()
+        run_command(user_input)
 
-def create_wallet():
-    global random_time
+def run_command(user_input):
+    # TODO - This will evaluate user input and execute the corresponding function
+    user_input=input(">")
+    run_command(user_input)
+
+def create_wallet_input():
+    time_randomness()
     print("\n\nWhat sort of wallet would you like to create?\n")
     print("[1] A randomly generated wallet. This will create a file on your computer containing all of the wallet information.\nIf you lose this file, you will lose the wallet and any funds.\n")
     print("[2] A passphrase wallet (brain wallet). You will enter a series of words as your seed.\nIf you forget the series of words, you will lose the wallet and any funds.\n")
     user_input = input("Please enter an option (1 or 2): ")
-    random_time += str(time.time()).encode("utf-8")
+    time_randomness()
     if user_input == "1":
-        create_wallet_random()
+        create_wallet_random_input()
     elif user_input == "2":
-        create_wallet_seed()
+        create_wallet_seed_input()
     else:
         print("Input not recognised. Please try again.")
-        create_wallet()
+        create_wallet_input()
 
-def create_wallet_random():
-    global random_time
-    print("\n\nYour wallet will be created using randomness from your computer, as well as user-generated randomness\n")
-    sufficient_randomness0=0
-    user_random = ""
-    while sufficient_randomness0==0:
-        if len(user_random) > 31:
-            random_time += str(time.time()).encode("utf-8")
-            sufficient_randomness0 = 1
-        else:
-            random_time += str(time.time()).encode("utf-8")
-            user_random += getpass.getpass("Please randomly press buttons on your keyboard, then push the Enter key")
-    print("")
-    sufficient_randomness1=0
-    while sufficient_randomness1==0:
-        random_time += str(time.time()).encode("utf-8")
-        if len(user_random) > 63:
-            sufficient_randomness1 = 1
-        else:
-            user_random += getpass.getpass("To add further randomness, please randomly press buttons on your keyboard, then push Enter")
-    password_match=0
-    print("You may protect your wallet with a password. This should NOT be the same as your passphrase. To continue without a password, leave the password field blank.")
-    while password_match==0:
-        userpass0 = getpass.getpass("Enter password")
-        random_time += str(time.time()).encode("utf-8")
-        if len(userpass0) > 0:
-            userpass1 = getpass.getpass("Enter password again")
-            random_time += str(time.time()).encode("utf-8")
-            if userpass0 == userpass1:
-                password_match=1
-                print("Password accepted")
-            else:
-                print("Passwords didn't match")
-        else:
-            print("Your wallet will not be password protected")
-            password_match=1
-    if len(userpass0) > 0:
-        hashed_password = hashlib.sha256(str(userpass0).encode("utf-8")).digest()
+def create_wallet_random_execute(file_name,password,user_random):
+    random_time=bytearray(time_randomness())
+    if len(password) > 0:
+        hashed_password = hashlib.sha256(str(password).encode("utf-8")).digest()
     else:
         hashed_password = [0]*32
-    file_name = input("Give your wallet file a name? (optional - default: CaptchaCoin Wallet)\n")
-    file_name = file_name.strip()
     if len(file_name) == 0:
         file_name="CaptchaCoin Wallet"
-    random_time += str(time.time()).encode("utf-8")
     # Hash inputs
     private_key_input = hashlib.sha256(user_random.encode("utf-8")+random_time+str(random.randrange(1000000000000)).encode("utf-8"))
     # A very small proportion of inputs are not valid for a private key. Keep hashing the input if necessary
@@ -109,18 +82,69 @@ def create_wallet_random():
         except:
             private_key_input = hashlib.sha256(private_key_input.digest())
     address=(b"\x00\x00"+hashlib.sha256(private_key.verifying_key.to_string('compressed')).digest()).hex()
-    save_wallet(private_key, file_name, hashed_password)
+    if len(file_name)>0:
+        save_wallet(private_key, file_name, hashed_password)
+    global active_private_key
+    active_private_key = private_key
+    global active_address
+    active_address=address
+    return private_key
+
+def create_wallet_random_input():
+    time_randomness()
+    print("\n\nYour wallet will be created using randomness from your computer, as well as user-generated randomness\n")
+    sufficient_randomness0=0
+    user_random = ""
+    while sufficient_randomness0==0:
+        if len(user_random) > 31:
+            time_randomness()
+            sufficient_randomness0 = 1
+        else:
+            time_randomness()
+            user_random += getpass.getpass("Please randomly press buttons on your keyboard, then push the Enter key")
+    print("")
+    sufficient_randomness1=0
+    while sufficient_randomness1==0:
+        time_randomness()
+        if len(user_random) > 63:
+            sufficient_randomness1 = 1
+        else:
+            user_random += getpass.getpass("To add further randomness, please randomly press buttons on your keyboard, then push Enter")
+    password_match=0
+    print("You may protect your wallet with a password. This should NOT be the same as your passphrase. To continue without a password, leave the password field blank.")
+    while password_match==0:
+        userpass0 = getpass.getpass("Enter password")
+        time_randomness()
+        if len(userpass0) > 0:
+            userpass1 = getpass.getpass("Enter password again")
+            time_randomness()
+            if userpass0 == userpass1:
+                password_match=1
+                print("Password accepted")
+            else:
+                print("Passwords didn't match")
+        else:
+            print("Your wallet will not be password protected")
+            password_match=1
+    file_name = input("Give your wallet file a name? (optional - default: CaptchaCoin Wallet)\n")
+    file_name = file_name.strip()
+    if len(file_name) == 0:
+        file_name="CaptchaCoin Wallet"
+    time_randomness()
+    private_key=create_wallet_random_execute(file_name,userpass0,user_random)
+    address=(b"\x00\x00"+hashlib.sha256(private_key.verifying_key.to_string('compressed')).digest()).hex()
+    # Print address
     user_input = input("\nWhat you like to do next?\n[1] Mine Caps to this address\n[2] Back to the main menu\n[Any other key] Quit\n")
     print("\n\n")
     if user_input=="1":
         webbrowser.open('https://www.captchacoin.net/earn/login-user.php?' + address)
     elif user_input=="2":
-        main()
+        initial_prompt()
     else:
         exit()
-    main()
+    initial_prompt()
 
-def create_wallet_seed():
+def create_wallet_seed_input():
     print("\n\nGenerate a wallet from a seed phrase. Only choose this option if you are confident you understand the requirements of doing so.\n")
     print("Your seed phrase is case-sensitive, and the placement of all spaces and other special characters must be identical when re-creating your wallet.")
     print("Would you like to view your pass phrase as you type it?\n[1] View as plain text\n[2] Do not show any user input")
@@ -145,7 +169,23 @@ def create_wallet_seed():
                 valid_passphrase=1
             else:
                 print("Your passphrases do not match.")
-    private_key_input = hashlib.sha256(str(passphrase0).encode("utf-8"))
+    private_key=create_wallet_seed_execute(passphrase0,0,"","")
+    address=(b"\x00\x00"+hashlib.sha256(private_key.verifying_key.to_string('compressed')).digest()).hex()
+    time.sleep(3)
+    user_input = input("\nWhat you like to do next?\n[1] Mine Caps to this address\n[2] Save the wallet as a file.\n[3] Back to the main menu\n[Any other key] Quit\n")
+    print("\n\n")
+    if user_input=="1":
+        webbrowser.open('https://www.captchacoin.net/earn/login-user.php?' + address)
+    elif user_input=="2":
+        save_wallet(private_key,"","")
+    elif user_input=="3":
+        initial_prompt()
+    else:
+        exit()
+    initial_prompt()
+
+def create_wallet_seed_execute(passphrase,save_wallet,file_name,password):
+    private_key_input = hashlib.sha256(str(passphrase).encode("utf-8"))
     # A very small proportion of inputs are not valid for a private key. Keep hashing the input if necessary
     valid_key_found=0
     while valid_key_found==0:
@@ -155,20 +195,14 @@ def create_wallet_seed():
         except:
             private_key_input = hashlib.sha256(private_key_input.digest())
     address=(b"\x00\x00"+hashlib.sha256(private_key.verifying_key.to_string('compressed')).digest()).hex()
-    print("Your brain wallet has been created.\nThe address for receiving Caps is:\n")
-    print(address + "\n")
-    time.sleep(3)
-    user_input = input("\nWhat you like to do next?\n[1] Mine Caps to this address\n[2] Save the wallet as a file.\n[3] Back to the main menu\n[Any other key] Quit\n")
-    print("\n\n")
-    if user_input=="1":
-        webbrowser.open('https://www.captchacoin.net/earn/login-user.php?' + address)
-    elif user_input=="2":
-        save_wallet(private_key,"","")
-    elif user_input=="3":
-        main()
-    else:
-        exit()
-    main()
+    print("Brain wallet address:   " + address)
+    if save_wallet==1:
+        save_wallet(private_key,file_name,password)
+    global active_private_key
+    active_private_key = private_key
+    global active_address
+    active_address=address
+    return private_key
 
 def save_wallet(private_key, file_name, hashed_password):
     file_name=str(file_name)
@@ -309,7 +343,7 @@ def create_transaction(private_key):
         if user_input=="1":
             access_wallet_phrase(passphrase)
         if user_input=="2":
-            main()
+            initial_prompt()
     else:
         exit()
     
