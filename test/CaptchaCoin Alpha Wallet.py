@@ -5,8 +5,9 @@ try:
     import getpass
     import hashlib
     import webbrowser
+    import urllib.request
 except:
-    input("There was an error importing one or more of the following standard libraries: time, os, random, getpass, hashlib, webbrowser")
+    input("There was an error importing one or more of the following standard libraries: time, os, random, getpass, hashlib, webbrowser, urllib")
     exit()
 
 try:
@@ -338,11 +339,15 @@ def create_transaction(private_key):
     print(str(int.from_bytes(transaction_output[36:44],"big")/1000000000) + " - Caps to send")
     print(str(int.from_bytes(transaction_output[44:49],"big")) + " - unix time transaction was created")
     valid_input=0
-    user_input = input("\nWhat you like to do next?\n[1] Create another transaction using the same seed phrase\n[2] Back to the main menu\n[Any other key] Quit\n")
-    if user_input=="1" or user_input =="2":
+    user_input = input("\nWhat you like to do next?\n[1] Send the transaction\n[2] Create another transaction using the same seed phrase\n[3] Back to the main menu\n[Any other key] Quit\n")
+    if user_input=="1" or user_input =="2" or user_input =="3":
         if user_input=="1":
-            access_wallet_phrase(passphrase)
+            sendrequest = urllib.request.urlopen("https://www.captchacoin.net/trans/send-caps-wallet.php?" + transaction_output.hex()).read()
+            initial_prompt()
+            create_transaction(private_key)
         if user_input=="2":
+            create_transaction(private_key)
+        if user_input=="3":
             initial_prompt()
     else:
         exit()
