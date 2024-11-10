@@ -300,7 +300,15 @@ def access_wallet_phrase(existing_phrase):
     address=(b"\x00\x00"+hashlib.sha256(private_key.verifying_key.to_string('compressed')).digest()).hex()
     print("The phrase you have entered produces the following address:")
     print(address)
-    user_input = input("\nWhat you like to do next?\n[1] Mine Caps to this address\n[2] Create a transaction [3] Back to the main menu\n[Any other key] Quit\n")
+    try:
+        balances = urllib.request.urlopen("https://www.captchacoin.net/earn/my-wallet-summary.php?" + address).read().decode('utf-8')
+        print("Cap amount: " + str(int(balances[68:84],16)/1000000000))
+        print("Log amount: " + str(int(balances[84:100],16)/1000000000))
+        print("Free logs:  " + str(int(balances[100:116],16)/1000000000))
+    except:
+        # Most likely accessing wallet offline
+        print("Unable to display wallet balance")
+    user_input = input("\nWhat you like to do next?\n[1] Mine Caps to this address\n[2] Create a transaction\n[3] Back to the main menu\n[Any other key] Quit\n")
     print("\n\n")
     if user_input=="1":
         webbrowser.open('https://www.captchacoin.net/earn/login-user.php?' + address)
