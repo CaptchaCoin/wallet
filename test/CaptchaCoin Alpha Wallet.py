@@ -300,7 +300,16 @@ def access_wallet_phrase(existing_phrase):
     address=(b"\x00\x00"+hashlib.sha256(private_key.verifying_key.to_string('compressed')).digest()).hex()
     print("The phrase you have entered produces the following address:")
     print(address)
-    create_transaction(private_key)
+    user_input = input("\nWhat you like to do next?\n[1] Mine Caps to this address\n[2] Create a transaction [3] Back to the main menu\n[Any other key] Quit\n")
+    print("\n\n")
+    if user_input=="1":
+        webbrowser.open('https://www.captchacoin.net/earn/login-user.php?' + address)
+    elif user_input=="2":
+        create_transaction(private_key)
+    elif user_input=="3":
+        initial_prompt()
+    else:
+        exit()
 
 def create_transaction(private_key):
     # Verify private key
